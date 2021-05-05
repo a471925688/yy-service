@@ -1,0 +1,139 @@
+<div class="layui-card animated fadeInUp">
+    <div class="layui-card-header">
+        <h2 class="header-title">游戏列表</h2>
+        <span class="layui-breadcrumb pull-right">
+          <a href="#!home_console">首页</a>
+          <a><cite>游戏列表</cite></a>
+        </span>
+    </div>
+    <div class="layui-card-body">
+        <div class="layui-form toolbar">
+
+<!--            <button id="game-btn-search" class="layui-btn icon-btn"><i class="layui-icon">&#xe615;</i>搜索</button>-->
+            <button id="game-btn-add" class="layui-btn icon-btn" ><i
+                    class="layui-icon">&#xe654;</i>添加
+            </button>
+        </div>
+        <table class="layui-table" id="game-table" lay-filter="game-table"></table>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="game-table-bar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn  layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+
+
+<script>
+    layui.use(['form', 'table', 'util', 'admin', 'element'], function () {
+        var form = layui.form;
+        var table = layui.table;
+        var layer = layui.layer;
+        var util = layui.util;
+        var admin = layui.admin;
+        var element = layui.element;
+        console.log("111")
+        form.render('select');
+        // 渲染表格
+        table.render({
+            elem: '#game-table',
+            url: 'game/game/list',
+            page: true,
+            cols: [[
+                {type: 'numbers'},
+                {field: 'name', sort: true, title: '游戏名称'},
+                {
+                    sort: true, templet: function (d) {
+                        return util.toDateString(d.createTime);
+                    }, title: '創建時間'
+                },
+                {align: 'center', toolbar: '#game-table-bar', title: '操作'}
+            ]]
+        });
+
+        // 添加按钮点击事件
+        $('#game-btn-add').click(function () {
+            showEditModel();
+        });
+
+        // 工具条点击事件
+        table.on('tool(game-table)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+
+            if (layEvent === 'edit') { // 修改
+                showEditModel(data);
+            } else if (layEvent === 'del') { // 重置密码
+                layer.confirm('确定删除此游戏吗？', function (i) {
+                    layer.close(i);
+                    layer.load(2);
+                    $.post('game/game/del', {
+                        id:data.id
+                    }, function (data) {
+                        layer.closeAll('loading');
+                        if (!data.code) {
+                            layer.msg(data.msg, {icon: 1});
+                            table.reload('game-table', {});
+                        } else {
+                            layer.msg(data.msg, {icon: 2});
+                        }
+                    });
+                });
+            }
+        });
+
+        // 显示表单弹窗
+        var showEditModel = function (data) {
+            var title = data ? '修改游戏' : '添加游戏';
+            admin.putTempData('t_game', data);
+            admin.popupCenter({
+                title: title,
+                path: 'game/game/editForm',
+                finish: function () {
+                    table.reload('game-table', {});
+                }
+            });
+        };
+        form.on('select(typeId)', function(data){
+            var param = {
+                typeId:data.value
+            }
+            table.reload('game-table', {where:param});
+        })
+        // 搜索按钮点击事件
+        // $('#game-btn-search').click(function () {
+        //     var key = $('#game-search-key').val();
+        //     var value = $('#game-search-value').val();
+        //     var param = {
+        //         gameId:null,
+        //         gamename:null,
+        //         nickName:null,
+        //         phone:null
+        //     };
+        //     param[key] = value;
+        //     console.log(param);
+        //     table.reload('game-table', {where:param});
+        // });
+
+        // 修改game状态
+        form.on('switch(game-tpl-state)', function (obj) {
+            layer.load(2);
+            $.post('game/game/updateState', {
+                gameId: obj.elem.value,
+                state: obj.elem.checked ? 0 : 1
+            }, function (data) {
+                layer.closeAll('loading');
+                if (!data.code) {
+                    layer.msg(data.msg, {icon: 1});
+                    //table.reload('table-game', {});
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox');
+                }
+            });
+        });
+    });
+</script>

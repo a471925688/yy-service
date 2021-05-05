@@ -1,0 +1,297 @@
+<div class="layui-card animated fadeInUp">
+    <div class="layui-card-header">
+        <h2 class="header-title">會員管理</h2>
+        <span class="layui-breadcrumb pull-right">
+          <a href="#!home_console">首页</a>
+          <a><cite>會員管理</cite></a>
+        </span>
+    </div>
+    <div class="layui-card-body">
+        <div class="layui-form toolbar">
+            搜索：
+            <select id="taskAccount-search-key">
+                <option value="">-請選擇-</option>
+                <option value="id">ID</option>
+                <option value="username">账号</option>
+                <option value="phone">手机号</option>
+            </select>&emsp;
+            <input id="taskAccount-search-value" class="layui-input search-input" type="text" placeholder="输入关键字"/>&emsp;
+            <select id="taskAccount-search-state" name="state">
+                <option value="">-选择状态-</option>
+                <option value="0">不可用</option>
+                <option value="1">未开通直播</option>
+                <option value="2">待认证</option>
+                <option value="3">未获低保</option>
+                <option value="4">低保中</option>
+                <option value="5">已过低保</option>
+            </select>&emsp;
+            <select id="taskAccount-search-batchNo" name="state">
+                <option value="">-选择批次-</option>
+                <% for(batchNo in batchNos) { %>
+                <option value="${batchNo.id}" >${batchNo.no}</option>
+                <% } %>
+            </select>&emsp;
+            <button id="taskAccount-btn-search" class="layui-btn icon-btn"><i class="layui-icon">&#xe615;</i>搜索</button>
+            <button id="taskAccount-btn-add" class="layui-btn icon-btn" lay-tips="新会员密码为123456"><i
+                    class="layui-icon">&#xe654;</i>添加
+            </button>
+        </div>
+
+        <table class="layui-table" id="taskAccount-table" lay-filter="taskAccount-table"></table>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="taskAccount-table-bar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+<!--    <a class="layui-btn  layui-btn-xs" lay-event="top_up">充值</a>-->
+<!--    <a class="layui-btn layui-btn-xs" lay-event="reset">重置密碼</a>-->
+</script>
+
+<!-- 表格状态列 -->
+<script type="text/html" id="taskAccount-tpl-state">
+    <input type="checkbox" lay-filter="taskAccount-tpl-state" value="{{d.userId}}" lay-skin="switch" lay-text="正常|锁定"
+           {{d.state==0?'checked':''}}/>
+</script>
+
+<script type="text/html" id="taskAccount-select-batchNo">
+    <div class="layui-form-item">
+        <label class="layui-form-label">选择批次</label>
+        <div class="layui-input-inline">
+            <select name="batchNoId"  lay-filter="gameType" >
+                <% for(batchNo in batchNos) { %>
+                <option value="${batchNo.id}"  selected>${batchNo.no}</option>
+                <% } %>
+            </select>
+        </div>
+    </div>
+</script>
+
+
+<script type="text/html" id="barDemo">
+
+<!--    <a class="layui-btn layui-btn-xs" id="test1" lay-event="import">导入</a>-->
+    <button type="button" class="layui-btn" id="file">
+        导入
+    </button>
+    <button type="button" class="layui-btn" id="changeState"  lay-event="changeState">
+        修改状态
+    </button>
+    <!-- 这里同样支持 laytpl 语法，如： -->
+<!--    {{#  if(d.auth > 2){ }}-->
+<!--    <a class="layui-btn layui-btn-xs" lay-event="check">审核</a>-->
+<!--    {{#  } }}-->
+</script>
+<script>
+    layui.use(['form', 'table', 'util', 'admin', 'element','upload'], function () {
+        var form = layui.form;
+        var table = layui.table;
+        var layer = layui.layer;
+        var util = layui.util;
+        var admin = layui.admin;
+        var element = layui.element;
+        var upload = layui.upload; //得到 upload 对象
+        form.render('select');
+
+        // 渲染表格
+        table.render({
+            elem: '#taskAccount-table',
+            url: 'taskAccount/taskAccount/list',
+            toolbar: '#barDemo', //开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+            page: true,
+            cols: [[
+                {type: 'numbers',fixed: 'left'},
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'accountInfo.username',fixed: 'left', width:120,sort: true, templet:"<div>{{d.accountInfo.username}}</div>",title: '账号'},
+                {field: 'accountInfo.password', width:120,sort: true, templet:"<div>{{d.accountInfo.password}}</div>",title: '密码'},
+                {field: 'batchNo.no',width:80, sort: true, templet:"<div>{{d.batchNo.no}}</div>",title: '批号'},
+                {field: 'phone',width:120, sort: true, title: '手机号'},
+                {field: 'romNo', sort: true, width:120,title: '房间号'},
+                {field: 'yyNo', sort: true, width:120, title: 'YY号'},
+                {field: 'state', sort: true, width:120, title: '状态',templet:function (d){
+                    var resHtml = "";
+                    switch (d.state){
+                        case 0 :resHtml="不可用";break;
+                        case 1 :resHtml="未开通直播间";break;
+                        case 2 :resHtml="未认证";break;
+                        case 3 :resHtml="未获低保";break;
+                        case 4 :resHtml="低保中";break;
+                        case 5 :resHtml="已过低保";break;
+                    }
+                    return resHtml;
+                }},
+                {field: 'curTaskState.liveTime', sort: true, width:100, templet:"<div>{{d.curTaskState.liveTime}}</div>",title: '已直播时长'},
+                {field: 'curTaskState.followNum', sort: true, width:100,templet:"<div>{{d.curTaskState.followNum}}</div>", title: '已关注次数'},
+                {field: 'curTaskState.happyFight', sort: true,  width:100,templet:"<div>{{d.curTaskState.happyFight}}</div>",title: '已斗播次数'},
+                {field: 'curTaskState.curTaskType',  width:100,  templet:"<div>{{d.curTaskState.curTaskType}}</div>",title:'当前任务'},
+                // {field: 'curTaskState.machineNo', width:120, templet:"<div>{{d.curTaskState.machineNo}}</div>",title: '所在机器编号'},
+                {
+                    sort: true, templet: function (d) {
+                        return util.toDateString(d.createTime);
+                    }, title: '創建時間'
+                },
+
+                // {field: 'state', sort: true, templet: '#taskAccount-tpl-state', title: '状态'},
+                {align: 'center',fixed: 'right',minWidth:200, toolbar: '#taskAccount-table-bar', title: '操作'}
+            ]],
+            done: function(res, curr, count){
+
+            }
+        });
+
+        // 添加按钮点击事件
+        $('#taskAccount-btn-add').click(function () {
+            showEditModel();
+        });
+
+        table.on('toolbar(taskAccount-table)', function (obj) {
+            var checkStatus = table.checkStatus(obj.config.id)
+                ,data = checkStatus.data; //获取选中的数据
+            var layEvent = obj.event;
+            var ids = [];
+
+            switch (layEvent) {
+                case  'changeState': {
+                    if(data.length === 0){
+                        layer.msg('请选择一行');
+                        return;
+                    } else {
+                        for(var i =0; i<data.length;i++){
+                            ids.push(data[i].id);
+                        }
+                    }
+                    admin.putTempData('t_taskAccount_data', {
+                        ids:ids
+                    });
+                    admin.popupCenter({
+                        title: "账号导入",
+                        path: 'taskAccount/taskAccount/importView',
+                        finish: function () {
+                            layer.closeAll('loading');
+                            table.reload('taskAccount-table', {});
+                        }
+                    });
+                    console.log("修改状态")
+                    // $("#file").click();
+                }
+            }
+        });
+
+
+        // 工具条点击事件
+        table.on('tool(taskAccount-table)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+
+            switch (layEvent) {
+                case 'edit':{
+                    showEditModel(data);
+                    break;
+                }
+                case 'top_up':{
+                    admin.putTempData('t_taskAccount', data);
+                    admin.popupCenter({
+                        title: "代幣充值",
+                        path: 'taskAccount/tokenMoney/recharge',
+                        finish: function () {
+                            table.reload('taskAccount-table', {});
+                        }
+                    });
+                    break;
+                }
+                case 'reset':{
+                    layer.confirm('確定重置此會員密碼嗎？', function (i) {
+                        layer.close(i);
+                        layer.load(2);
+                        admin.req('system/user/restPsw',{userId: obj.data.userId},function (data) {
+                            layer.closeAll('loading');
+                            if (data.code == 200) {
+                                layer.msg(data.msg, {icon: 1});
+                            } else {
+                                layer.msg(data.msg, {icon: 2});
+                            }
+                        })
+                    });
+                    break;
+                }
+            }
+        });
+
+        // 显示表单弹窗
+        var showEditModel = function (data) {
+            var title = data ? '修改會員' : '添加會員';
+            admin.putTempData('t_taskAccount', data);
+            admin.popupCenter({
+                title: title,
+                path: 'taskAccount/taskAccount/editForm',
+                finish: function () {
+                    table.reload('taskAccount-table', {});
+                }
+            });
+        };
+
+        // 搜索按钮点击事件
+        $('#taskAccount-btn-search').click(function () {
+            var key = $('#taskAccount-search-key').val();
+
+            var value = $('#taskAccount-search-value').val();
+
+            var param = {
+                id:null,
+                username:null,
+                phone:null,
+                state: $('#taskAccount-search-state').val(),
+                batchNoId: $('#taskAccount-search-batchNo').val(),
+            };
+            param[key] = value;
+            console.log(param);
+            table.reload('taskAccount-table', {where:param});
+        });
+
+        // 修改user状态
+        form.on('switch(taskAccount-tpl-state)', function (obj) {
+            layer.load(2);
+            admin.req('system/user/updateState',{userId: obj.elem.value, state: obj.elem.checked ? 0 : 1},function (data) {
+                layer.closeAll('loading');
+                if (data.code==200) {
+                    layer.msg(data.msg, {icon: 1});
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox');
+                }
+            })
+        });
+
+        upload.render({
+            elem: '#file'
+            ,url: 'file/uploadFile' //必填项
+            ,accept:"file"
+            ,data: {
+                type:1
+            } //可选项。额外的参数，如：{id: 123, abc: 'xxx'}
+            ,before: function(obj){ //obj参数包含的信息，跟 choose回调完全一致，可参见上文。
+                layer.load(); //上传loading
+            }
+            ,done: function(res, index, upload){
+                layer.closeAll('loading');
+                admin.putTempData('t_taskAccount_data', {
+                    type:1,
+                    fileName:res.fileName
+                });
+                admin.popupCenter({
+                    title: "账号导入",
+                    path: 'taskAccount/taskAccount/importView',
+                    finish: function () {
+                        layer.closeAll('loading');
+                        table.reload('taskAccount-table', {});
+                    }
+                });
+            }
+            ,error: function(index, upload){
+                layer.closeAll('loading'); //关闭loading
+            }
+        });
+
+    });
+</script>

@@ -1,0 +1,113 @@
+<!-- user表单弹窗 -->
+<form id="taskAccount-form" lay-filter="taskAccount-form" class="layui-form model-form">
+    <input name="id" type="hidden"/>
+    <div class="layui-form-item">
+        <label class="layui-form-label">选择批次</label>
+        <div class="layui-input-inline">
+            <select name="batchNoId"  lay-filter="gameType" >
+                <% for(batchNo in batchNos) { %>
+                <option value="${batchNo.id}"  selected>${batchNo.no}</option>
+                <% } %>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">賬號</label>
+        <div class="layui-input-inline">
+            <input name="username" placeholder="请输入用戶名" type="text" class="layui-input" maxlength="20"
+                   lay-verify="required" required/>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">密码</label>
+        <div class="layui-input-inline">
+            <input name="password" placeholder="请输入密码" type="text" class="layui-input" maxlength="20"
+                   lay-verify="required" required/>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">yy号</label>
+        <div class="layui-input-inline">
+            <input name="yyNo" placeholder="yy号" type="text" class="layui-input" lay-verify="text"
+                   required/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">房间号</label>
+        <div class="layui-input-inline">
+            <input name="romNo" placeholder="房间号" type="text" class="layui-input"  lay-verify="text"
+                   required/>
+        </div>
+    </div>
+
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">手機號</label>
+        <div>
+            <div class="layui-input-inline" style="width: 80px" >
+                <select name="areaCode">
+                    <option value="010">澳門</option>
+                    <option value="86">中國大陸</option>
+                    <option value="0571">香港</option>
+                </select>
+            </div>
+            <div class="layui-form-mid">-</div>
+        </div>
+
+        <div class="layui-input-inline" style="width: 150px">
+            <input name="phone" placeholder="请输入手機號" type="text" class="layui-input" lay-verify="required|phone"
+                   required/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">状态</label>
+        <div class="layui-input-inline">
+            <input type="radio" name="state" value="1" title="未开通直播" checked/>
+            <input type="radio" name="state" value="2" title="待认证" checked/>
+            <input type="radio" name="state" value="3" title="未获低保"/>
+            <input type="radio" name="state" value="4" title="低保中"/>
+            <input type="radio" name="state" value="5" title="已过低保"/>
+        </div>
+    </div>
+    <div class="layui-form-item model-form-footer">
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+        <button class="layui-btn" lay-filter="taskAccount-form-submit" lay-submit>保存</button>
+    </div>
+</form>
+
+<script>
+    layui.use(['layer', 'admin', 'form'], function () {
+        var layer = layui.layer;
+        var admin = layui.admin;
+        var form = layui.form;
+        form.render();
+        // form.render('radio');
+
+        var url = 'taskAccount/taskAccount/add';
+        // 回显user数据
+        var tem = admin.getTempData('t_taskAccount');
+        if (tem) {
+            $('input[name="username"]').attr('readonly', 'readonly');
+            url = 'taskAccount/taskAccount/edit';
+            form.val('taskAccount-form', tem);
+            form.val('taskAccount-form', tem.accountInfo);
+        }
+
+        // 表单提交事件
+        form.on('submit(taskAccount-form-submit)', function (data) {
+            layer.load(2);
+            $.post(url, data.field, function (data) {
+                layer.closeAll('loading');
+                if (!data.code) {
+                    layer.msg(data.msg, {icon: 1});
+                    admin.finishPopupCenter();
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                }
+            });
+            return false;
+        });
+    });
+</script>

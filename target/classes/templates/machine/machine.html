@@ -1,0 +1,142 @@
+<div class="layui-card animated fadeInUp">
+    <div class="layui-card-header">
+        <h2 class="header-title">机器列表</h2>
+        <span class="layui-breadcrumb pull-right">
+          <a href="#!home_console">首页</a>
+          <a><cite>机器列表</cite></a>
+        </span>
+    </div>
+    <div class="layui-card-body">
+        <div class="layui-form toolbar">
+
+<!--            <button id="machine-btn-search" class="layui-btn icon-btn"><i class="layui-icon">&#xe615;</i>搜索</button>-->
+            <button id="machine-btn-add" class="layui-btn icon-btn" ><i
+                    class="layui-icon">&#xe654;</i>添加
+            </button>
+        </div>
+        <table class="layui-table" id="machine-table" lay-filter="machine-table"></table>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="machine-table-bar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+    <a class="layui-btn  layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+
+
+<script>
+    layui.use(['form', 'table', 'util', 'admin', 'element'], function () {
+        var form = layui.form;
+        var table = layui.table;
+        var layer = layui.layer;
+        var util = layui.util;
+        var admin = layui.admin;
+        var element = layui.element;
+        console.log("111")
+        form.render('select');
+        // 渲染表格
+        table.render({
+            elem: '#machine-table',
+            url: 'machine/machine/list',
+            page: true,
+            cols: [[
+                {type: 'numbers'},
+                {field: 'no', sort: true, title: '机器编号'},
+                {field: 'linkName', sort: true, title: '链接账号'},
+                {field: 'linkName', sort: true, title: '链接密码'},
+                {field: 'remarks', sort: true, title: '备注'},
+                {
+                    sort: true, templet: function (d) {
+                        return util.toDateString(d.createTime);
+                    }, title: '創建時間'
+                },
+                {align: 'center', toolbar: '#machine-table-bar', title: '操作'}
+            ]]
+        });
+
+        // 添加按钮点击事件
+        $('#machine-btn-add').click(function () {
+            showEditModel();
+        });
+
+        // 工具条点击事件
+        table.on('tool(machine-table)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+
+            if (layEvent === 'edit') { // 修改
+                showEditModel(data);
+            } else if (layEvent === 'del') { // 重置密码
+                layer.confirm('确定删除此机器吗？', function (i) {
+                    layer.close(i);
+                    layer.load(2);
+                    $.post('machine/machine/del', {
+                        id:data.id
+                    }, function (data) {
+                        layer.closeAll('loading');
+                        if (!data.code) {
+                            layer.msg(data.msg, {icon: 1});
+                            table.reload('machine-table', {});
+                        } else {
+                            layer.msg(data.msg, {icon: 2});
+                        }
+                    });
+                });
+            }
+        });
+
+        // 显示表单弹窗
+        var showEditModel = function (data) {
+            var title = data ? '修改机器' : '添加机器';
+            admin.putTempData('t_machine', data);
+            admin.popupCenter({
+                title: title,
+                path: 'machine/machine/editForm',
+                finish: function () {
+                    table.reload('machine-table', {});
+                }
+            });
+        };
+        form.on('select(typeId)', function(data){
+            var param = {
+                typeId:data.value
+            }
+            table.reload('machine-table', {where:param});
+        })
+        // 搜索按钮点击事件
+        // $('#machine-btn-search').click(function () {
+        //     var key = $('#machine-search-key').val();
+        //     var value = $('#machine-search-value').val();
+        //     var param = {
+        //         machineId:null,
+        //         machinename:null,
+        //         nickName:null,
+        //         phone:null
+        //     };
+        //     param[key] = value;
+        //     console.log(param);
+        //     table.reload('machine-table', {where:param});
+        // });
+
+        // 修改machine状态
+        form.on('switch(machine-tpl-state)', function (obj) {
+            layer.load(2);
+            $.post('machine/machine/updateState', {
+                machineId: obj.elem.value,
+                state: obj.elem.checked ? 0 : 1
+            }, function (data) {
+                layer.closeAll('loading');
+                if (!data.code) {
+                    layer.msg(data.msg, {icon: 1});
+                    //table.reload('table-machine', {});
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox');
+                }
+            });
+        });
+    });
+</script>

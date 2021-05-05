@@ -1,0 +1,85 @@
+<style>
+    .layui-form-item .layui-input-inline {
+        float: left;
+        width: 265px;
+        margin-right: 10px;
+    }
+</style>
+<!-- user表单弹窗 -->
+<form id="batchNo-form" lay-filter="batchNo-form" class="layui-form model-form">
+    <input type="hidden" name="id" >
+    <input type="hidden" id="imgRatio">
+    <div class="layui-form-item">
+        <label class="layui-form-label">选择游戏</label>
+        <div class="layui-input-inline">
+            <select name="gameId"  lay-filter="gameType" >
+                <% for(game in games) { %>
+                <option value="${game.id}"  selected>${game.name}</option>
+                <% } %>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label"></label>
+        <div class="layui-input-inline">
+            <input name="no" placeholder="批次编号" type="text" class="layui-input"/>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">备注</label>
+        <div class="layui-input-inline">
+            <textarea placeholder="请输入內容" name="remarks" id="advertisingTypeDescribe" class="layui-textarea"></textarea>
+        </div>
+    </div>
+
+
+    <div class="layui-form-item model-form-footer">
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+        <button class="layui-btn" lay-filter="batchNo-form-submit" lay-submit>保存</button>
+    </div>
+
+</form>
+
+<script>
+    layui.use(['layer', 'admin', 'form', 'upload'], function () {
+        var layer = layui.layer;
+        var admin = layui.admin;
+        var form = layui.form;
+        // var formSelects = layui.formSelects;
+        var upload = layui.upload;
+        form.render('select');
+
+        var url = 'batchNo/batchNo/add';
+        // 回显user数据
+        var batchNo = admin.getTempData('t_batchNo');
+        console.log(batchNo)
+        if (batchNo) {
+            url = 'batchNo/batchNo/update';
+            form.val('batchNo-form', batchNo);
+            Upload.showImgHandle("uploadic","image/"+batchNo.imageName);
+        }
+        form.on('select(batchNoType)', function(data){
+            $("#imgRatio").val($(data.elem).find("option[value="+data.value+"]").attr("imgratio"))
+        })
+        Upload.uploadImgCropper(upload, "uploadic", "file/uploadImages", {}, "jpg|gif|bmp|png|jpeg",$("select[name=typeId]"));
+
+        // 表单提交事件
+        form.on('submit(batchNo-form-submit)', function (data) {
+            var param = data.field;
+            layer.load(2);
+            // param.orderIds = orderIds;
+            // console.log(param)
+            $.post(url, param, function (data) {
+                layer.closeAll('loading');
+                if (!data.code) {
+                    layer.msg(data.msg, {icon: 1});
+                    admin.finishPopupCenter();
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                }
+            });
+            return false;
+        });
+
+    });
+</script>

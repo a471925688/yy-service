@@ -1,0 +1,84 @@
+package com.game.xiaoyan.system.service.impl;
+
+
+import com.game.xiaoyan.common.utils.BeanUtils;
+import com.game.xiaoyan.system.entity.Machine;
+import com.game.xiaoyan.system.repository.MachineRepository;
+import com.game.xiaoyan.system.service.MachineService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+
+@Service
+public class MachineServiceImpl implements MachineService {
+
+    @Resource
+    private MachineRepository machineRepository;
+
+
+
+    //////////////////////////////查询部分  start//////////////////////////////////////////////////////////
+    //////////////////////////////查询部分  start//////////////////////////////////////////////////////////
+    @Override
+    public Page list(Integer page, Integer limit, Integer userId) {
+        return machineRepository.getByUserId(userId,PageRequest.of(page-1,limit));
+    }
+
+
+
+    //////////////////////////////查询部分  end//////////////////////////////////////////////////////////
+    //////////////////////////////查询部分  end//////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+    //////////////////////////////增删改部分  start//////////////////////////////////////////////////////////
+    //////////////////////////////增删改部分  start//////////////////////////////////////////////////////////
+
+
+    @Override
+    @Transactional
+    public void add(Machine machine)throws Exception {
+        machineRepository.save(machine);
+    }
+
+
+    @Override
+    @Transactional
+    public void update(Machine machine)throws Exception {
+        Machine oldMachine = machineRepository.getOne(machine.getId());
+        BeanUtils.copyNotNullProperties(machine,oldMachine);
+        machineRepository.save(oldMachine);
+    }
+
+    @Override
+    @Transactional
+    public void del(Integer machineId) {
+        machineRepository.deleteById(machineId);
+    }
+
+    //////////////////////////////增删改部分  end//////////////////////////////////////////////////////////
+    //////////////////////////////增删改部分  end//////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+    //////////////////////////////逻辑处理部分  start//////////////////////////////////////////////////////////
+    //////////////////////////////逻辑处理部分  start//////////////////////////////////////////////////////////
+
+    //////////////////////////////逻辑处理部分  end//////////////////////////////////////////////////////////
+    //////////////////////////////逻辑处理部分  end//////////////////////////////////////////////////////////
+
+}
+

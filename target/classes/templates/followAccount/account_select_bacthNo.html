@@ -1,0 +1,50 @@
+<!-- user表单弹窗 -->
+<form id="followAccount-select-batchNo" lay-filter="followAccount-select-batchNo" class="layui-form model-form">
+    <input name="id" type="hidden"/>
+    <div class="layui-form-item">
+        <label class="layui-form-label">状态</label>
+        <div class="layui-input-inline">
+            <input type="radio" name="state" value="1" title="已使用"/>
+            <input type="radio" name="state" value="2" title="未使用" checked/>
+        </div>
+    </div>
+    <div class="layui-form-item model-form-footer">
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+        <button class="layui-btn" lay-filter="followAccount-select-batchNo-submit" lay-submit>保存</button>
+    </div>
+</form>
+
+<script>
+    layui.use(['layer', 'admin', 'form'], function () {
+        var layer = layui.layer;
+        var admin = layui.admin;
+        var form = layui.form;
+        form.render();
+        // form.render('radio');
+        // 回显user数据
+        var url = 'followAccount/followAccount/import';
+        var tempData = admin.getTempData('t_followAccount_data');
+        if(tempData.ids){
+            url = "followAccount/followAccount/batchChange";
+        }
+        console.log(tempData)
+        // 表单提交事件
+        form.on('submit(followAccount-select-batchNo-submit)', function (data) {
+            layer.load(2);
+            tempData.batchNoId=data.field.batchNoId
+            tempData.state = data.field.state
+            console.log(tempData)
+            admin.req(url,tempData,function (data) {
+                layer.closeAll('loading');
+                if (!data.code) {
+                    layer.msg(data.msg, {icon: 1});
+                    admin.finishPopupCenter();
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                }
+            })
+            return false;
+        });
+
+    });
+</script>

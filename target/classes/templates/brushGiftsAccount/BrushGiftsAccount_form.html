@@ -1,0 +1,74 @@
+<!-- user表单弹窗 -->
+<form id="brushGiftsAccount-form" lay-filter="brushGiftsAccount-form" class="layui-form model-form">
+    <input name="id" type="hidden"/>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">賬號</label>
+        <div class="layui-input-inline">
+            <input name="username" placeholder="请输入用戶名" type="text" class="layui-input" maxlength="20"
+                   lay-verify="required" required/>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">密码</label>
+        <div class="layui-input-inline">
+            <input name="password" placeholder="请输入密码" type="text" class="layui-input" maxlength="20"
+                   lay-verify="required" required/>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">余额</label>
+        <div class="layui-input-inline">
+            <input name="balance" placeholder="请输入Y币余额" type="text" class="layui-input" maxlength="20"
+                   lay-verify="required" />
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">状态</label>
+        <div class="layui-input-inline">
+            <input type="radio" name="state" value="1" title="不可用" />
+            <input type="radio" name="state" value="2" title="正常" checked/>
+        </div>
+    </div>
+    <div class="layui-form-item model-form-footer">
+        <button class="layui-btn layui-btn-primary" type="button" ew-event="closeDialog">取消</button>
+        <button class="layui-btn" lay-filter="brushGiftsAccount-form-submit" lay-submit>保存</button>
+    </div>
+</form>
+
+<script>
+    layui.use(['layer', 'admin', 'form'], function () {
+        var layer = layui.layer;
+        var admin = layui.admin;
+        var form = layui.form;
+        form.render();
+        // form.render('radio');
+
+        var url = 'brushGiftsAccount/brushGiftsAccount/add';
+        // 回显user数据
+        var tem = admin.getTempData('t_brushGiftsAccount');
+        if (tem) {
+            $('input[name="username"]').attr('readonly', 'readonly');
+            url = 'brushGiftsAccount/brushGiftsAccount/edit';
+            form.val('brushGiftsAccount-form', tem);
+            form.val('brushGiftsAccount-form', tem.accountInfo);
+        }
+
+        // 表单提交事件
+        form.on('submit(brushGiftsAccount-form-submit)', function (data) {
+            layer.load(2);
+            $.post(url, data.field, function (data) {
+                layer.closeAll('loading');
+                if (!data.code) {
+                    layer.msg(data.msg, {icon: 1});
+                    admin.finishPopupCenter();
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                }
+            });
+            return false;
+        });
+    });
+</script>

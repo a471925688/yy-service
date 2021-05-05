@@ -1,0 +1,180 @@
+<div class="layui-card animated fadeInUp">
+    <div class="layui-card-header">
+        <h2 class="header-title">任务管理</h2>
+        <span class="layui-breadcrumb pull-right">
+          <a href="#!home_console">首页</a>
+          <a><cite>任务管理</cite></a>
+        </span>
+    </div>
+    <div class="layui-card-body">
+        <div class="layui-form toolbar">
+            搜索：
+            <select id="brushGiftsTask-search-key">
+                <option value="">-請選擇-</option>
+                <option value="id">ID</option>
+                <option value="username">账号</option>
+                <option value="romNo">房间号</option>
+            </select>&emsp;
+            <input id="brushGiftsTask-search-value" class="layui-input search-input" type="text" placeholder="输入关键字"/>&emsp;
+            <select id="brushGiftsTask-search-state" name="state">
+                <option value="">-选择状态-</option>
+                <option value="1">进行中</option>
+                <option value="2">成功</option>
+                <option value="3">失败</option>
+            </select>&emsp;
+            日期：
+            <div class="layui-inline"> <!-- 注意：这一层元素并不是必须的 -->
+                <input type="text" class="layui-input" id="date">
+            </div>
+            <button id="brushGiftsTask-btn-search" class="layui-btn icon-btn"><i class="layui-icon">&#xe615;</i>搜索</button>
+        </div>
+
+
+        <table class="layui-table" id="brushGiftsTask-table" lay-filter="brushGiftsTask-table"></table>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="brushGiftsTask-table-bar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+<!--    <a class="layui-btn  layui-btn-xs" lay-event="top_up">充值</a>-->
+<!--    <a class="layui-btn layui-btn-xs" lay-event="reset">重置密碼</a>-->
+</script>
+
+<!-- 表格状态列 -->
+<script type="text/html" id="brushGiftsTask-tpl-state">
+    <input type="checkbox" lay-filter="brushGiftsTask-tpl-state" value="{{d.userId}}" lay-skin="switch" lay-text="正常|锁定"
+           {{d.state==0?'checked':''}}/>
+</script>
+
+<script>
+    layui.use(['form', 'table', 'util', 'admin', 'element','upload','laydate'], function () {
+        var form = layui.form;
+        var table = layui.table;
+        var layer = layui.layer;
+        var util = layui.util;
+        var admin = layui.admin;
+        var laydate = layui.laydate; //
+        form.render('select');
+
+        var searchTime = "";
+        //执行一个laydate实例
+        laydate.render({
+            elem: '#date' //指定元素
+            ,done: function(value, date, endDate){
+                searchTime = value;
+                console.log(value); //得到日期生成的值，如：2017-08-18
+                console.log(date); //得到日期时间对象：{year: 2017, month: 8, date: 18, hours: 0, minutes: 0, seconds: 0}
+                console.log(endDate); //得结束的日期时间对象，开启范围选择（range: true）才会返回。对象成员同上。
+            }
+        });
+        // 渲染表格
+        table.render({
+            elem: '#brushGiftsTask-table',
+            url: 'brushGiftsTask/brushGiftsTask/list',
+            page: true,
+            cols: [[
+                {type: 'numbers',fixed: 'left'},
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'accountInfo.username',fixed: 'left', width:160,sort: true, templet:"<div>{{d.accountInfo.username}}</div>",title: '账号'},
+                {field: 'romNo', width:160,sort: true, title: '房间号'},
+                {field: 'state', sort: true, width:120, title: '状态',templet:function (d){
+                    var resHtml = "";
+                    switch (d.state){
+                        case 1 :resHtml="进行中";break;
+                        case 2 :resHtml="成功";break;
+                        case 3 :resHtml="失败";break;
+                    }
+                    return resHtml;
+                }},
+                // {field: 'curTaskState.machineNo', width:120, templet:"<div>{{d.curTaskState.machineNo}}</div>",title: '所在机器编号'},
+                {
+                    sort: true, templet: function (d) {
+                        return util.toDateString(d.createTime);
+                    }, title: '創建時間'
+                },
+
+                // {field: 'state', sort: true, templet: '#brushGiftsTask-tpl-state', title: '状态'},
+                {align: 'center',fixed: 'right',minWidth:200, toolbar: '#brushGiftsTask-table-bar', title: '操作'}
+            ]],
+            done: function(res, curr, count){
+
+            }
+        });
+
+
+
+
+        // 工具条点击事件
+        table.on('tool(brushGiftsTask-table)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+
+            switch (layEvent) {
+                case 'edit':{
+                    showEditModel(data);
+                    break;
+                }
+                case 'top_up':{
+                    admin.putTempData('t_brushGiftsTask', data);
+                    admin.popupCenter({
+                        title: "代幣充值",
+                        path: 'brushGiftsTask/tokenMoney/recharge',
+                        finish: function () {
+                            table.reload('brushGiftsTask-table', {});
+                        }
+                    });
+                    break;
+                }
+                case 'reset':{
+                    layer.confirm('確定重置此账号密碼嗎？', function (i) {
+                        layer.close(i);
+                        layer.load(2);
+                        admin.req('system/user/restPsw',{userId: obj.data.userId},function (data) {
+                            layer.closeAll('loading');
+                            if (data.code == 200) {
+                                layer.msg(data.msg, {icon: 1});
+                            } else {
+                                layer.msg(data.msg, {icon: 2});
+                            }
+                        })
+                    });
+                    break;
+                }
+            }
+        });
+
+        // 显示表单弹窗
+        var showEditModel = function (data) {
+            var title = data ? '修改账号' : '添加账号';
+            admin.putTempData('t_brushGiftsTask', data);
+            admin.popupCenter({
+                title: title,
+                path: 'brushGiftsTask/brushGiftsTask/editForm',
+                finish: function () {
+                    table.reload('brushGiftsTask-table', {});
+                }
+            });
+        };
+
+        // 搜索按钮点击事件
+        $('#brushGiftsTask-btn-search').click(function () {
+            var key = $('#brushGiftsTask-search-key').val();
+
+            var value = $('#brushGiftsTask-search-value').val();
+
+            var param = {
+                id:null,
+                username:null,
+                romNo:null,
+                state: $('#brushGiftsTask-search-state').val()
+            };
+            param[key] = value;
+            console.log(param);
+            table.reload('brushGiftsTask-table', {where:param});
+        });
+
+
+
+    });
+</script>

@@ -1,0 +1,262 @@
+<div class="layui-card animated fadeInUp">
+    <div class="layui-card-header">
+        <h2 class="header-title">账号管理</h2>
+        <span class="layui-breadcrumb pull-right">
+          <a href="#!home_console">首页</a>
+          <a><cite>账号管理</cite></a>
+        </span>
+    </div>
+    <div class="layui-card-body">
+        <div class="layui-form toolbar">
+            搜索：
+            <select id="brushGiftsAccount-search-key">
+                <option value="">-請選擇-</option>
+                <option value="id">ID</option>
+                <option value="username">账号</option>
+            </select>&emsp;
+            <input id="brushGiftsAccount-search-value" class="layui-input search-input" type="text" placeholder="输入关键字"/>&emsp;
+            <select id="brushGiftsAccount-search-state" name="state">
+                <option value="">-选择状态-</option>
+                <option value="1">不可用</option>
+                <option value="2">正常</option>
+
+            </select>&emsp;
+
+            <button id="brushGiftsAccount-btn-search" class="layui-btn icon-btn"><i class="layui-icon">&#xe615;</i>搜索</button>
+            <button id="brushGiftsAccount-btn-add" class="layui-btn icon-btn" lay-tips="新会员密码为123456"><i
+                    class="layui-icon">&#xe654;</i>添加
+            </button>
+        </div>
+
+        <table class="layui-table" id="brushGiftsAccount-table" lay-filter="brushGiftsAccount-table"></table>
+    </div>
+</div>
+
+<!-- 表格操作列 -->
+<script type="text/html" id="brushGiftsAccount-table-bar">
+    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">修改</a>
+<!--    <a class="layui-btn  layui-btn-xs" lay-event="top_up">充值</a>-->
+<!--    <a class="layui-btn layui-btn-xs" lay-event="reset">重置密碼</a>-->
+</script>
+
+<!-- 表格状态列 -->
+<script type="text/html" id="brushGiftsAccount-tpl-state">
+    <input type="checkbox" lay-filter="brushGiftsAccount-tpl-state" value="{{d.userId}}" lay-skin="switch" lay-text="正常|锁定"
+           {{d.state==0?'checked':''}}/>
+</script>
+
+
+<script type="text/html" id="barDemo">
+
+<!--    <a class="layui-btn layui-btn-xs" id="test1" lay-event="import">导入</a>-->
+    <button type="button" class="layui-btn" id="file">
+        导入
+    </button>
+    <button type="button" class="layui-btn" id="changeState"  lay-event="changeState">
+        修改状态
+    </button>
+    <!-- 这里同样支持 laytpl 语法，如： -->
+<!--    {{#  if(d.auth > 2){ }}-->
+<!--    <a class="layui-btn layui-btn-xs" lay-event="check">审核</a>-->
+<!--    {{#  } }}-->
+</script>
+<script>
+    layui.use(['form', 'table', 'util', 'admin', 'element','upload'], function () {
+        var form = layui.form;
+        var table = layui.table;
+        var layer = layui.layer;
+        var util = layui.util;
+        var admin = layui.admin;
+        var element = layui.element;
+        var upload = layui.upload; //得到 upload 对象
+        form.render('select');
+
+        // 渲染表格
+        table.render({
+            elem: '#brushGiftsAccount-table',
+            url: 'brushGiftsAccount/brushGiftsAccount/list',
+            toolbar: '#barDemo', //开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+            page: true,
+            cols: [[
+                {type: 'numbers',fixed: 'left'},
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'accountInfo.username',fixed: 'left', width:120,sort: true, templet:"<div>{{d.accountInfo.username}}</div>",title: '账号'},
+                {field: 'accountInfo.password', width:120,sort: true, templet:"<div>{{d.accountInfo.password}}</div>",title: '密码'},
+                {field: '', width:120,sort: true, title: '余额'},
+                {field: 'state', sort: true, width:120, title: '状态',templet:function (d){
+                    var resHtml = "";
+                    switch (d.state){
+                        case 1 :resHtml="已使用";break;
+                        case 2 :resHtml="未使用";break;
+                    }
+                    return resHtml;
+                }},
+                // {field: 'curTaskState.machineNo', width:120, templet:"<div>{{d.curTaskState.machineNo}}</div>",title: '所在机器编号'},
+                {
+                    sort: true, templet: function (d) {
+                        return util.toDateString(d.createTime);
+                    }, title: '創建時間'
+                },
+
+                // {field: 'state', sort: true, templet: '#brushGiftsAccount-tpl-state', title: '状态'},
+                {align: 'center',fixed: 'right',minWidth:200, toolbar: '#brushGiftsAccount-table-bar', title: '操作'}
+            ]],
+            done: function(res, curr, count){
+
+            }
+        });
+
+        // 添加按钮点击事件
+        $('#brushGiftsAccount-btn-add').click(function () {
+            showEditModel();
+        });
+
+        table.on('toolbar(brushGiftsAccount-table)', function (obj) {
+            var checkStatus = table.checkStatus(obj.config.id)
+                ,data = checkStatus.data; //获取选中的数据
+            var layEvent = obj.event;
+            var ids = [];
+
+            switch (layEvent) {
+                case  'changeState': {
+                    if(data.length === 0){
+                        layer.msg('请选择一行');
+                        return;
+                    } else {
+                        for(var i =0; i<data.length;i++){
+                            ids.push(data[i].id);
+                        }
+                    }
+                    admin.putTempData('t_brushGiftsAccount_data', {
+                        ids:ids
+                    });
+                    admin.popupCenter({
+                        title: "账号导入",
+                        path: 'brushGiftsAccount/brushGiftsAccount/importView',
+                        finish: function () {
+                            layer.closeAll('loading');
+                            table.reload('brushGiftsAccount-table', {});
+                        }
+                    });
+                    console.log("修改状态")
+                    // $("#file").click();
+                }
+            }
+        });
+
+
+        // 工具条点击事件
+        table.on('tool(brushGiftsAccount-table)', function (obj) {
+            var data = obj.data;
+            var layEvent = obj.event;
+
+            switch (layEvent) {
+                case 'edit':{
+                    showEditModel(data);
+                    break;
+                }
+                case 'top_up':{
+                    admin.putTempData('t_brushGiftsAccount', data);
+                    admin.popupCenter({
+                        title: "代幣充值",
+                        path: 'brushGiftsAccount/tokenMoney/recharge',
+                        finish: function () {
+                            table.reload('brushGiftsAccount-table', {});
+                        }
+                    });
+                    break;
+                }
+                case 'reset':{
+                    layer.confirm('確定重置此账号密碼嗎？', function (i) {
+                        layer.close(i);
+                        layer.load(2);
+                        admin.req('system/user/restPsw',{userId: obj.data.userId},function (data) {
+                            layer.closeAll('loading');
+                            if (data.code == 200) {
+                                layer.msg(data.msg, {icon: 1});
+                            } else {
+                                layer.msg(data.msg, {icon: 2});
+                            }
+                        })
+                    });
+                    break;
+                }
+            }
+        });
+
+        // 显示表单弹窗
+        var showEditModel = function (data) {
+            var title = data ? '修改账号' : '添加账号';
+            admin.putTempData('t_brushGiftsAccount', data);
+            admin.popupCenter({
+                title: title,
+                path: 'brushGiftsAccount/brushGiftsAccount/editForm',
+                finish: function () {
+                    table.reload('brushGiftsAccount-table', {});
+                }
+            });
+        };
+
+        // 搜索按钮点击事件
+        $('#brushGiftsAccount-btn-search').click(function () {
+            var key = $('#brushGiftsAccount-search-key').val();
+
+            var value = $('#brushGiftsAccount-search-value').val();
+
+            var param = {
+                id:null,
+                username:null,
+                state: $('#brushGiftsAccount-search-state').val()
+            };
+            param[key] = value;
+            console.log(param);
+            table.reload('brushGiftsAccount-table', {where:param});
+        });
+
+        // 修改user状态
+        form.on('switch(brushGiftsAccount-tpl-state)', function (obj) {
+            layer.load(2);
+            admin.req('system/user/updateState',{userId: obj.elem.value, state: obj.elem.checked ? 0 : 1},function (data) {
+                layer.closeAll('loading');
+                if (data.code==200) {
+                    layer.msg(data.msg, {icon: 1});
+                } else {
+                    layer.msg(data.msg, {icon: 2});
+                    $(obj.elem).prop('checked', !obj.elem.checked);
+                    form.render('checkbox');
+                }
+            })
+        });
+
+        upload.render({
+            elem: '#file'
+            ,url: 'file/uploadFile' //必填项
+            ,accept:"file"
+            ,data: {
+                type:1
+            } //可选项。额外的参数，如：{id: 123, abc: 'xxx'}
+            ,before: function(obj){ //obj参数包含的信息，跟 choose回调完全一致，可参见上文。
+                layer.load(); //上传loading
+            }
+            ,done: function(res, index, upload){
+                layer.closeAll('loading');
+                admin.putTempData('t_brushGiftsAccount_data', {
+                    type:1,
+                    fileName:res.fileName
+                });
+                admin.popupCenter({
+                    title: "账号导入",
+                    path: 'brushGiftsAccount/brushGiftsAccount/importView',
+                    finish: function () {
+                        layer.closeAll('loading');
+                        table.reload('brushGiftsAccount-table', {});
+                    }
+                });
+            }
+            ,error: function(index, upload){
+                layer.closeAll('loading'); //关闭loading
+            }
+        });
+
+    });
+</script>
