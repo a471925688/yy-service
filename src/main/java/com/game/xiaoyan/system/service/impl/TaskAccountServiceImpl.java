@@ -79,10 +79,10 @@ public class TaskAccountServiceImpl implements TaskAccountService {
     @Override
     @Transactional
     public void add(TaskAccount taskAccount,AccountInfo accountInfo) {
+        accountInfo.setType(ProjectConfig.AccountType.TASK.getValue());
         if (taskAccountRepository.existsByAccountInfoUsernameAndAccountInfoTypeAndAccountInfoUserId(accountInfo.getUsername(),accountInfo.getType(),accountInfo.getUserId())) {
             throw new CustormException(CodeAndMsg.USER_ADDERROR);
         }
-        accountInfo.setType(ProjectConfig.AccountType.TASK.getValue());
         CurTaskState curTaskState = new CurTaskState();
         curTaskState = curTaskStateRepository.save(curTaskState);
         BatchNo batchNo =  batchNoRepository.getOne(taskAccount.getBatchNoId());
