@@ -98,6 +98,7 @@ public class TaskAccountServiceImpl implements TaskAccountService {
     @Override
     @Transactional
     public void update(TaskAccount taskAccount,AccountInfo accountInfo) {
+        accountInfo.setId(null);
         TaskAccount  oldTaskAccount  = taskAccountRepository.getOne(taskAccount.getId());
         BeanUtils.copyNotNullProperties(taskAccount,oldTaskAccount);
         BeanUtils.copyNotNullProperties(accountInfo,oldTaskAccount.getAccountInfo());

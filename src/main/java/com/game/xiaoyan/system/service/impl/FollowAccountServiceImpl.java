@@ -91,6 +91,7 @@ public class FollowAccountServiceImpl implements FollowAccountService {
     @Override
     @Transactional
     public void update(FollowAccount followAccount,AccountInfo accountInfo) {
+        accountInfo.setId(null);
         FollowAccount  oldFollowAccount  = followAccountRepository.getOne(followAccount.getId());
         BeanUtils.copyNotNullProperties(followAccount,oldFollowAccount);
         BeanUtils.copyNotNullProperties(accountInfo,oldFollowAccount.getAccountInfo());

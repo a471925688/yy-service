@@ -86,6 +86,7 @@ public class GrushGiftsAccountServiceImpl implements BrushGiftsAccountService {
     @Override
     @Transactional
     public void update(BrushGiftsAccount brushGiftsAccount,AccountInfo accountInfo) {
+        accountInfo.setId(null);
         BrushGiftsAccount  oldBrushGiftsAccount  = brushGiftsAccountRepository.getOne(brushGiftsAccount.getId());
         BeanUtils.copyNotNullProperties(brushGiftsAccount,oldBrushGiftsAccount);
         BeanUtils.copyNotNullProperties(accountInfo,oldBrushGiftsAccount.getAccountInfo());
